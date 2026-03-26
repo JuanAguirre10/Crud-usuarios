@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRUD Usuarios</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F8F8F5; --card: #fff; --border: #E4E4DF;
+    --ink: #111; --ink-2: #555; --ink-3: #999;
+    --accent: #5B6AF0; --accent-light: #EEF0FF;
+    --green: #22C55E; --red: #EF4444; --yellow: #F59E0B;
+    --radius: 12px; --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  header {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 0 2rem; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: var(--shadow);
+  }
+  .brand { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  .brand span { background: var(--accent); color: white; border-radius: 8px; padding: 4px 10px; font-size: 13px; }
+  .stats { display: flex; gap: 1.5rem; }
+  .stat { font-size: 12px; color: var(--ink-2); }
+  .stat strong { color: var(--accent); font-size: 16px; font-weight: 700; }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+
+  /* Form */
+  .form-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px;
+    margin-bottom: 2rem; box-shadow: var(--shadow);
+  }
+  .form-title { font-size: 14px; font-weight: 700; margin-bottom: 1rem; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.08em; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr 140px 100px; gap: 12px; align-items: end; }
+  label { font-size: 12px; font-weight: 600; color: var(--ink-2); display: block; margin-bottom: 5px; }
+  input, select {
+    width: 100%; padding: 9px 13px; border: 1px solid var(--border);
+    border-radius: 8px; font-size: 13px; font-family: inherit;
+    background: var(--bg); color: var(--ink);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,106,240,0.12); }
+  .btn {
+    padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; font-family: inherit;
+    transition: transform 0.15s, opacity 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .btn:hover { transform: translateY(-1px); opacity: 0.9; }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-danger  { background: var(--red); color: white; padding: 7px 12px; font-size: 12px; }
+  .btn-edit    { background: var(--accent-light); color: var(--accent); padding: 7px 12px; font-size: 12px; }
+  .btn-cancel  { background: var(--border); color: var(--ink-2); }
+
+  /* Edit banner */
+  .edit-banner {
+    display: none; background: var(--accent-light); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 8px 14px; margin-bottom: 12px;
+    font-size: 12px; font-weight: 600; color: var(--accent);
+    align-items: center; gap: 8px;
+  }
+  .edit-banner.show { display: flex; }
+
+  /* Table */
+  .table-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+  }
+  .table-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-header h2 { font-size: 14px; font-weight: 700; }
+  .search-box {
+    padding: 7px 13px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; width: 220px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 700;
+    color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border); background: var(--bg);
+  }
+  td { padding: 13px 16px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+  .td-actions { display: flex; gap: 6px; }
+
+  .badge {
+    display: inline-block; padding: 3px 9px; border-radius: 100px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-admin  { background: #EEF0FF; color: #3730A3; }
+  .badge-user   { background: #F0FDF4; color: #166534; }
+  .badge-active { background: #F0FDF4; color: #166534; }
+  .badge-off    { background: #FEF2F2; color: #991B1B; }
+
+  /* Empty / Loading */
+  .empty { text-align: center; padding: 3rem; color: var(--ink-3); font-size: 14px; }
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--ink); color: white;
+    padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transform: translateY(80px); opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: var(--green); }
+  .toast.error   { background: var(--red); }
+
+  @media (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .stats { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span>CRUD</span> Usuarios</div>
+  <div class="stats">
+    <div class="stat"><strong id="totalCount">0</strong><br>Total</div>
+    <div class="stat"><strong id="activeCount">0</strong><br>Activos</div>
+    <div class="stat"><strong id="adminCount">0</strong><br>Admins</div>
+  </div>
+</header>
+
+<main>
+  <!-- Formulario -->
+  <div class="form-card">
+    <div class="form-title" id="formTitle">Nuevo usuario</div>
+    <div class="edit-banner" id="editBanner">
+      ✏️ Editando usuario — <span id="editingName"></span>
+      <button class="btn btn-cancel" style="margin-left:auto;padding:4px 10px;font-size:11px" onclick="cancelEdit()">Cancelar</button>
+    </div>
+    <div class="form-grid">
+      <div>
+        <label>Nombre</label>
+        <input type="text" id="inputNombre" placeholder="Juan Aguirre">
+      </div>
+      <div>
+        <label>Email</label>
+        <input type="email" id="inputEmail" placeholder="juan@correo.com">
+      </div>
+      <div>
+        <label>Rol</label>
+        <select id="inputRol">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">＋ Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="table-card">
+    <div class="table-header">
+      <h2>Lista de usuarios</h2>
+      <input class="search-box" type="text" placeholder="Buscar..." oninput="filterTable(this.value)">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="7" class="empty">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api/usuarios';
+let editingId = null;
+let allUsers  = [];
+
+// ── Utils ──────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function updateStats(users) {
+  document.getElementById('totalCount').textContent  = users.length;
+  document.getElementById('activeCount').textContent = users.filter(u => u.activo).length;
+  document.getElementById('adminCount').textContent  = users.filter(u => u.rol === 'admin').length;
+}
+
+// ── Render tabla ───────────────────────────────────────────
+function renderTable(users) {
+  const tbody = document.getElementById('tbody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay usuarios aún. ¡Agrega el primero!</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr id="row-${u.id}">
+      <td style="color:var(--ink-3);font-size:12px">#${u.id}</td>
+      <td><strong>${u.nombre}</strong></td>
+      <td style="color:var(--ink-2)">${u.email}</td>
+      <td><span class="badge badge-${u.rol}">${u.rol}</span></td>
+      <td><span class="badge ${u.activo ? 'badge-active' : 'badge-off'}">${u.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td style="color:var(--ink-3);font-size:12px">${formatDate(u.created_at)}</td>
+      <td>
+        <div class="td-actions">
+          <button class="btn btn-edit" onclick="startEdit(${u.id})">✏️ Editar</button>
+          <button class="btn btn-danger" onclick="deleteUser(${u.id})">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterTable(q) {
+  const filtered = allUsers.filter(u =>
+    u.nombre.toLowerCase().includes(q.toLowerCase()) ||
+    u.email.toLowerCase().includes(q.toLowerCase())
+  );
+  renderTable(filtered);
+}
+
+// ── CRUD ───────────────────────────────────────────────────
+async function loadUsers() {
+  const res  = await fetch(API);
+  const json = await res.json();
+  allUsers   = json.data || [];
+  renderTable(allUsers);
+  updateStats(allUsers);
+}
+
+async function submitForm() {
+  const nombre = document.getElementById('inputNombre').value.trim();
+  const email  = document.getElementById('inputEmail').value.trim();
+  const rol    = document.getElementById('inputRol').value;
+  if (!nombre || !email) return showToast('Nombre y email son requeridos', 'error');
+
+  const method = editingId ? 'PUT' : 'POST';
+  const url    = editingId ? `${API}/${editingId}` : API;
+
+  const res  = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre, email, rol })
+  });
+  const json = await res.json();
+
+  if (!json.ok) return showToast(json.error, 'error');
+  showToast(editingId ? '✅ Usuario actualizado' : '✅ Usuario creado');
+  cancelEdit();
+  loadUsers();
+}
+
+function startEdit(id) {
+  const u = allUsers.find(x => x.id === id);
+  if (!u) return;
+  editingId = id;
+  document.getElementById('inputNombre').value = u.nombre;
+  document.getElementById('inputEmail').value  = u.email;
+  document.getElementById('inputRol').value    = u.rol;
+  document.getElementById('submitBtn').textContent = '💾 Guardar';
+  document.getElementById('editingName').textContent = u.nombre;
+  document.getElementById('editBanner').classList.add('show');
+  document.getElementById('inputNombre').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  editingId = null;
+  document.getElementById('inputNombre').value = '';
+  document.getElementById('inputEmail').value  = '';
+  document.getElementById('inputRol').value    = 'user';
+  document.getElementById('submitBtn').textContent = '＋ Agregar';
+  document.getElementById('editBanner').classList.remove('show');
+}
+
+async function deleteUser(id) {
+  const u = allUsers.find(x => x.id === id);
+  if (!confirm(`¿Eliminar a ${u?.nombre}?`)) return;
+  const res  = await fetch(`${API}/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.ok) return showToast(json.error, 'error');
+  showToast('🗑 Usuario eliminado');
+  loadUsers();
+}
+
+loadUsers();
+</script>
+</body>
+</html>
